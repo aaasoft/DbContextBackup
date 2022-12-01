@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33110.190
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DbContextBackup", "DbContextBackup\DbContextBackup.csproj", "{D750BD5F-19F7-4B3C-B468-ECAA9C4BF492}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DbContextBackup.Test", "DbContextBackup.Test\DbContextBackup.Test.csproj", "{8323E277-1B77-4CC7-8412-628FBB168E26}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D750BD5F-19F7-4B3C-B468-ECAA9C4BF492}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D750BD5F-19F7-4B3C-B468-ECAA9C4BF492}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D750BD5F-19F7-4B3C-B468-ECAA9C4BF492}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D750BD5F-19F7-4B3C-B468-ECAA9C4BF492}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8323E277-1B77-4CC7-8412-628FBB168E26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8323E277-1B77-4CC7-8412-628FBB168E26}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8323E277-1B77-4CC7-8412-628FBB168E26}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8323E277-1B77-4CC7-8412-628FBB168E26}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5759DC2D-F358-4D75-B0DC-12F8B87C7476}
+	EndGlobalSection
+EndGlobal
