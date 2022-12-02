@@ -142,7 +142,7 @@ namespace DbContextBackup
                     while (!reader.EndOfStream)
                     {
                         var line = reader.ReadLine();
-                        position += reader.CurrentEncoding.GetByteCount(line);
+                        position += reader.CurrentEncoding.GetByteCount(line) + 1;
                         if (string.IsNullOrEmpty(line))
                             continue;
                         if (line.StartsWith("#"))
