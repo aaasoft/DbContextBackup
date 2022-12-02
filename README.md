@@ -9,14 +9,6 @@ var backupContext = new DbContextBackup.DbContextBackupContext(
     );
 ```
 
-Prepare:
-```csharp
-var backupContext = new DbContextBackup.DbContextBackupContext(
-    (process, text) => Console.WriteLine($"[Progress][{process}%] {text}"),
-    state => Console.WriteLine($"[State] {state}")
-    );
-```
-
 Backup:
 ```csharp
 using (var dbContext = new MyDbContext())
