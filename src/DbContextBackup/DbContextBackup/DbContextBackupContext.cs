@@ -48,7 +48,7 @@ namespace DbContextBackup
         public void Backup(DbContext dbContext, Stream backupStream)
         {
             dbContext.Database.EnsureCreated();
-            using (var zipArchive = new ZipArchive(backupStream, ZipArchiveMode.Create))
+            using (var zipArchive = new ZipArchive(backupStream, ZipArchiveMode.Create, true))
             {
                 var dataEntry = zipArchive.CreateEntry(DB_DATA_ENTRY_NAME);
                 using (var stream = dataEntry.Open())
@@ -106,12 +106,12 @@ namespace DbContextBackup
         public void Restore(DbContext dbContext, Stream backupStream)
         {
             //读取元信息
-            using (ZipArchive zipArchive = new ZipArchive(backupStream, ZipArchiveMode.Read))
+            using (ZipArchive zipArchive = new ZipArchive(backupStream, ZipArchiveMode.Read, true))
             {
                 var dataEntry = zipArchive.GetEntry(DB_DATA_ENTRY_NAME);
                 if (dataEntry == null)
                     throw new ApplicationException(textResource.DatabaseBackupFileHasNoData);
-                
+
                 var totalLength = dataEntry.Length;
                 //开始导入
                 using (var stream = dataEntry.Open())
@@ -172,6 +172,22 @@ namespace DbContextBackup
                     stateNotify?.Invoke(textResource.SavingChanges);
                     dbContext.SaveChanges();
                 }
+            }
+        }
+
+        /// <summary>
+        /// 更新结构
+        /// </summary>
+        /// <param name="dbContext"></param>
+        public void UpdateSchema(DbContext dbContext)
+        {
+            using (var ms = new MemoryStream())
+            {
+                //备份
+                Backup(dbContext, ms);
+                //还原
+                ms.Position = 0;
+                Restore(dbContext, ms);
             }
         }
     }
