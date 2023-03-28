@@ -67,30 +67,34 @@ namespace DbContextBackup
                         using (var cmd = connection.CreateCommand())
                         {
                             cmd.CommandText = $"select * from {tableName}";
-                            using (var reader = cmd.ExecuteReader())
+                            try
                             {
-                                if (!reader.HasRows)
-                                    continue;
-                                writer.WriteLine($"#{clazz.FullName}");
-                                var fieldCount = reader.FieldCount;
-                                var fieldList = new List<string>();
-                                for (var fieldOrdinal = 0; fieldOrdinal < fieldCount; fieldOrdinal++)
+                                using (var reader = cmd.ExecuteReader())
                                 {
-                                    var fieldName = reader.GetName(fieldOrdinal);
-                                    fieldList.Add(fieldName);
-                                }
-                                while (reader.Read())
-                                {
-                                    JObject jObj = new JObject();
+                                    if (!reader.HasRows)
+                                        continue;
+                                    writer.WriteLine($"#{clazz.FullName}");
+                                    var fieldCount = reader.FieldCount;
+                                    var fieldList = new List<string>();
                                     for (var fieldOrdinal = 0; fieldOrdinal < fieldCount; fieldOrdinal++)
                                     {
-                                        var fieldName = fieldList[fieldOrdinal];
-                                        var fieldValue = reader.GetValue(fieldOrdinal);
-                                        jObj.Add(fieldName, JToken.FromObject(fieldValue));
+                                        var fieldName = reader.GetName(fieldOrdinal);
+                                        fieldList.Add(fieldName);
                                     }
-                                    writer.WriteLine(jObj.ToString(Formatting.None));
+                                    while (reader.Read())
+                                    {
+                                        JObject jObj = new JObject();
+                                        for (var fieldOrdinal = 0; fieldOrdinal < fieldCount; fieldOrdinal++)
+                                        {
+                                            var fieldName = fieldList[fieldOrdinal];
+                                            var fieldValue = reader.GetValue(fieldOrdinal);
+                                            jObj.Add(fieldName, JToken.FromObject(fieldValue));
+                                        }
+                                        writer.WriteLine(jObj.ToString(Formatting.None));
+                                    }
                                 }
                             }
+                            catch { }
                         }
                     }
                 }
