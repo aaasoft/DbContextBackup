@@ -16,6 +16,7 @@ namespace DbContextBackup
         private Action<int, string> progressNotify;
         private Action<string> stateNotify;
         private DbContextBackupContextTextResource textResource;
+        private JsonSerializerOptions jsonSerializerOptions;
 
         public DbContextBackupContext(
             Action<int, string> progressNotify = null,
@@ -27,6 +28,10 @@ namespace DbContextBackup
             if (textResource == null)
                 textResource = new DbContextBackupContextTextResource();
             this.textResource = textResource;
+            this.jsonSerializerOptions = new JsonSerializerOptions()
+            {
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+            };
         }
 
         private string getEntityTypeDisplayName(IEntityType entityType)
@@ -93,7 +98,7 @@ namespace DbContextBackup
                                             var fieldValue = reader.GetValue(fieldOrdinal);
                                             jObj.Add(fieldName, JsonValue.Create(fieldValue));
                                         }
-                                        writer.WriteLine(jObj.ToJsonString());
+                                        writer.WriteLine(jObj.ToJsonString(jsonSerializerOptions));
                                     }
                                 }
                             }
