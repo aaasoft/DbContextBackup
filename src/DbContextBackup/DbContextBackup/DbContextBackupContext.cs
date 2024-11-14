@@ -47,7 +47,6 @@ namespace DbContextBackup
 
         public void Backup(DbContext dbContext, Stream backupStream)
         {
-            dbContext.Database.EnsureCreated();
             using (var zipArchive = new ZipArchive(backupStream, ZipArchiveMode.Create, true))
             {
                 var dataEntry = zipArchive.CreateEntry(DB_DATA_ENTRY_NAME);
