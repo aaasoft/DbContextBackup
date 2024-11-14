@@ -47,14 +47,18 @@ namespace DbContextBackup
 
         public void Backup(DbContext dbContext, Stream backupStream)
         {
+            dbContext.Database.EnsureCreated();
+
+            var connection = dbContext.Database.GetDbConnection();
+            if (connection.State != System.Data.ConnectionState.Open)
+                connection.Open();
+
             using (var zipArchive = new ZipArchive(backupStream, ZipArchiveMode.Create, true))
             {
                 var dataEntry = zipArchive.CreateEntry(DB_DATA_ENTRY_NAME);
                 using (var stream = dataEntry.Open())
                 using (var writer = new StreamWriter(stream, dbBackupDataEncoding))
-                using (var connection = dbContext.Database.GetDbConnection())
-                {
-                    connection.Open();
+                {                    
                     var entityTypes = dbContext.Model.GetEntityTypes().ToArray();
                     var i = 1;
                     foreach (var entityType in entityTypes)
