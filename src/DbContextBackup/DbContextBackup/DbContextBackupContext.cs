@@ -16,7 +16,6 @@ namespace DbContextBackup
         private Action<int, string> progressNotify;
         private Action<string> stateNotify;
         private DbContextBackupContextTextResource textResource;
-        private JsonSerializerOptions jsonSerializerOptions;
 
         public DbContextBackupContext(
             Action<int, string> progressNotify = null,
@@ -28,10 +27,6 @@ namespace DbContextBackup
             if (textResource == null)
                 textResource = new DbContextBackupContextTextResource();
             this.textResource = textResource;
-            this.jsonSerializerOptions = new JsonSerializerOptions()
-            {
-                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-            };
         }
 
         private string getEntityTypeDisplayName(IEntityType entityType)
@@ -63,7 +58,7 @@ namespace DbContextBackup
                 var dataEntry = zipArchive.CreateEntry(DB_DATA_ENTRY_NAME);
                 using (var stream = dataEntry.Open())
                 using (var writer = new StreamWriter(stream, dbBackupDataEncoding))
-                {                    
+                {
                     var entityTypes = dbContext.Model.GetEntityTypes().ToArray();
                     var i = 1;
                     foreach (var entityType in entityTypes)
@@ -96,9 +91,11 @@ namespace DbContextBackup
                                         {
                                             var fieldName = fieldList[fieldOrdinal];
                                             var fieldValue = reader.GetValue(fieldOrdinal);
+                                            if (fieldValue == null || fieldValue is DBNull)
+                                                continue;
                                             jObj.Add(fieldName, JsonValue.Create(fieldValue));
                                         }
-                                        writer.WriteLine(jObj.ToJsonString(jsonSerializerOptions));
+                                        writer.WriteLine(jObj.ToJsonString());
                                     }
                                 }
                             }
