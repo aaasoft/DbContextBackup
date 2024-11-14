@@ -1,11 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System.ComponentModel;
 using System.IO.Compression;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace DbContextBackup
 {
@@ -82,14 +82,14 @@ namespace DbContextBackup
                                     }
                                     while (reader.Read())
                                     {
-                                        JObject jObj = new JObject();
+                                        var jObj = new JsonObject();
                                         for (var fieldOrdinal = 0; fieldOrdinal < fieldCount; fieldOrdinal++)
                                         {
                                             var fieldName = fieldList[fieldOrdinal];
                                             var fieldValue = reader.GetValue(fieldOrdinal);
-                                            jObj.Add(fieldName, JToken.FromObject(fieldValue));
+                                            jObj.Add(fieldName, JsonValue.Create(fieldValue));
                                         }
-                                        writer.WriteLine(jObj.ToString(Formatting.None));
+                                        writer.WriteLine(jObj.ToJsonString());
                                     }
                                 }
                             }
@@ -164,7 +164,7 @@ namespace DbContextBackup
                             if (currentEntityType == null)
                                 continue;
                             updateProgress();
-                            var item = JsonConvert.DeserializeObject(line, currentEntityType.ClrType);
+                            var item = JsonSerializer.Deserialize(line, currentEntityType.ClrType);
                             try
                             {
                                 dbContext.Add(item);
