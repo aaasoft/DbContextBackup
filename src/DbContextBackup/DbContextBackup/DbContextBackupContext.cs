@@ -146,6 +146,7 @@ namespace DbContextBackup
                     }
                     stateNotify?.Invoke(textResource.CreatingTableSchema);
                     dbContext.Database.EnsureCreated();
+                    dbContext.Database.Migrate();
 
                     stateNotify?.Invoke(textResource.RestoringData);
 
