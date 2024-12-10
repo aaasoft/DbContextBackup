@@ -45,7 +45,7 @@ namespace DbContextBackup
                 Backup(dbContext, stream);
         }
 
-        public void Backup(DbContext dbContext, Stream backupStream)
+        public void Backup(DbContext dbContext, Stream backupStream, params IEntityType[] entityTypes)
         {
             dbContext.Database.EnsureCreated();
 
@@ -59,7 +59,8 @@ namespace DbContextBackup
                 using (var stream = dataEntry.Open())
                 using (var writer = new StreamWriter(stream, dbBackupDataEncoding))
                 {
-                    var entityTypes = dbContext.Model.GetEntityTypes().ToArray();
+                    if (entityTypes == null || entityTypes.Length == 0)
+                        entityTypes = dbContext.Model.GetEntityTypes().ToArray();
                     var i = 1;
                     foreach (var entityType in entityTypes)
                     {
@@ -106,13 +107,13 @@ namespace DbContextBackup
             }
         }
 
-        public void Restore(DbContext dbContext, string backupFile)
+        public void Restore(DbContext dbContext, string backupFile, params IEntityType[] entityTypes)
         {
             using (var stream = File.OpenRead(backupFile))
-                Restore(dbContext, stream);
+                Restore(dbContext, stream, entityTypes);
         }
 
-        public void Restore(DbContext dbContext, Stream backupStream)
+        public void Restore(DbContext dbContext, Stream backupStream, params IEntityType[] entityTypes)
         {
             //读取元信息
             using (ZipArchive zipArchive = new ZipArchive(backupStream, ZipArchiveMode.Read, true))
@@ -126,9 +127,23 @@ namespace DbContextBackup
                 using (var stream = dataEntry.Open())
                 using (var reader = new StreamReader(stream, dbBackupDataEncoding))
                 {
-                    stateNotify?.Invoke(textResource.DeletingTableSchema);
-                    dbContext.Database.EnsureDeleted();
 
+                    stateNotify?.Invoke(textResource.DeletingTableSchema);
+                    //如果没有传实体类型数组参数，则删除整个数据库
+                    if (entityTypes == null || entityTypes.Length == 0)
+                    {
+                        dbContext.Database.EnsureDeleted();
+                    }
+                    //否则删除指定的实体类型对应的表
+                    else
+                    {
+                        foreach (var entityType in entityTypes)
+                        {
+                            var tableName = entityType.GetTableName();
+                            var dropTableSql = $"drop table {tableName}";
+                            dbContext.Database.ExecuteSqlRaw(dropTableSql);
+                        }
+                    }
                     stateNotify?.Invoke(textResource.CreatingTableSchema);
                     dbContext.Database.EnsureCreated();
 
