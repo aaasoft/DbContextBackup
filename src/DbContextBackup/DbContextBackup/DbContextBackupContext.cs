@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using System.ComponentModel;
 using System.IO.Compression;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -170,12 +171,24 @@ namespace DbContextBackup
                             if (currentEntityType == null)
                                 continue;
                             updateProgress();
-                            var item = JsonSerializer.Deserialize(line, currentEntityType.ClrType);
+
+                            object item = null;
+                            try
+                            {
+                                item = JsonSerializer.Deserialize(line, currentEntityType.ClrType);
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new SerializationException($"将数据[{line}]反序列化为类型[{currentEntityType.ClrType.FullName}]时失败。", ex);
+                            }
                             try
                             {
                                 dbContext.Add(item);
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                throw new SerializationException($"将类型[{currentEntityType.ClrType.FullName}]的数据[{line}]写入数据库时失败。", ex);
+                            }
                         }
                     }
                     stateNotify?.Invoke(textResource.SavingChanges);
