@@ -33,7 +33,7 @@ namespace DbContextBackup
         private string getEntityTypeDisplayName(IEntityType entityType)
         {
             var tableDisplayName = entityType.ClrType
-                .GetCustomAttribute<DisplayNameAttribute>()?.DisplayName;
+                .GetCustomAttribute<CommentAttribute>()?.Comment;
             if (string.IsNullOrEmpty(tableDisplayName))
                 tableDisplayName = entityType.DisplayName();
             tableDisplayName += $"({entityType.GetTableName()})";
