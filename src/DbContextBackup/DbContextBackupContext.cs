@@ -39,13 +39,13 @@ namespace DbContextBackup
             return tableDisplayName;
         }
 
-        public void Backup(DbContext dbContext, string backupFile)
+        public void Backup(DbContext dbContext, string backupFile, Func<string, string> tableNameProcessor = null)
         {
             using (var stream = File.OpenWrite(backupFile))
-                Backup(dbContext, stream);
+                Backup(dbContext, stream, tableNameProcessor);
         }
 
-        public void Backup(DbContext dbContext, Stream backupStream)
+        public void Backup(DbContext dbContext, Stream backupStream, Func<string, string> tableNameProcessor = null)
         {
             dbContext.Database.EnsureCreated();
 
@@ -67,39 +67,37 @@ namespace DbContextBackup
                         i++;
                         var clazz = entityType.ClrType;
                         var tableName = entityType.GetTableName();
+                        if (tableNameProcessor != null)
+                            tableName = tableNameProcessor(tableName);
                         using (var cmd = connection.CreateCommand())
                         {
                             cmd.CommandText = $"select * from {tableName}";
-                            try
+                            using (var reader = cmd.ExecuteReader())
                             {
-                                using (var reader = cmd.ExecuteReader())
+                                if (!reader.HasRows)
+                                    continue;
+                                writer.WriteLine($"#{clazz.FullName}");
+                                var fieldCount = reader.FieldCount;
+                                var fieldList = new List<string>();
+                                for (var fieldOrdinal = 0; fieldOrdinal < fieldCount; fieldOrdinal++)
                                 {
-                                    if (!reader.HasRows)
-                                        continue;
-                                    writer.WriteLine($"#{clazz.FullName}");
-                                    var fieldCount = reader.FieldCount;
-                                    var fieldList = new List<string>();
+                                    var fieldName = reader.GetName(fieldOrdinal);
+                                    fieldList.Add(fieldName);
+                                }
+                                while (reader.Read())
+                                {
+                                    var jObj = new JsonObject();
                                     for (var fieldOrdinal = 0; fieldOrdinal < fieldCount; fieldOrdinal++)
                                     {
-                                        var fieldName = reader.GetName(fieldOrdinal);
-                                        fieldList.Add(fieldName);
+                                        var fieldName = fieldList[fieldOrdinal];
+                                        var fieldValue = reader.GetValue(fieldOrdinal);
+                                        if (fieldValue == null || fieldValue is DBNull)
+                                            continue;
+                                        jObj.Add(fieldName, JsonValue.Create(fieldValue));
                                     }
-                                    while (reader.Read())
-                                    {
-                                        var jObj = new JsonObject();
-                                        for (var fieldOrdinal = 0; fieldOrdinal < fieldCount; fieldOrdinal++)
-                                        {
-                                            var fieldName = fieldList[fieldOrdinal];
-                                            var fieldValue = reader.GetValue(fieldOrdinal);
-                                            if (fieldValue == null || fieldValue is DBNull)
-                                                continue;
-                                            jObj.Add(fieldName, JsonValue.Create(fieldValue));
-                                        }
-                                        writer.WriteLine(jObj.ToJsonString());
-                                    }
+                                    writer.WriteLine(jObj.ToJsonString());
                                 }
                             }
-                            catch { }
                         }
                     }
                 }
