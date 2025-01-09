@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using System.ComponentModel;
 using System.IO.Compression;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -127,12 +126,6 @@ namespace DbContextBackup
                 using (var stream = dataEntry.Open())
                 using (var reader = new StreamReader(stream, dbBackupDataEncoding))
                 {
-                    stateNotify?.Invoke(textResource.DeletingTableSchema);
-                    dbContext.Database.EnsureDeleted();
-
-                    stateNotify?.Invoke(textResource.CreatingTableSchema);
-                    dbContext.Database.EnsureCreated();
-
                     stateNotify?.Invoke(textResource.RestoringData);
 
                     Dictionary<string, IEntityType> clazzDict = new Dictionary<string, IEntityType>();
@@ -194,22 +187,6 @@ namespace DbContextBackup
                     stateNotify?.Invoke(textResource.SavingChanges);
                     dbContext.SaveChanges();
                 }
-            }
-        }
-
-        /// <summary>
-        /// 更新结构
-        /// </summary>
-        /// <param name="dbContext"></param>
-        public void UpdateSchema(DbContext dbContext)
-        {
-            using (var ms = new MemoryStream())
-            {
-                //备份
-                Backup(dbContext, ms);
-                //还原
-                ms.Position = 0;
-                Restore(dbContext, ms);
             }
         }
     }
