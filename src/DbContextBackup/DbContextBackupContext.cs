@@ -72,32 +72,36 @@ namespace DbContextBackup
                         using (var cmd = connection.CreateCommand())
                         {
                             cmd.CommandText = $"select * from {tableName}";
-                            using (var reader = cmd.ExecuteReader())
+                            try
                             {
-                                if (!reader.HasRows)
-                                    continue;
-                                writer.WriteLine($"#{clazz.FullName}");
-                                var fieldCount = reader.FieldCount;
-                                var fieldList = new List<string>();
-                                for (var fieldOrdinal = 0; fieldOrdinal < fieldCount; fieldOrdinal++)
+                                using (var reader = cmd.ExecuteReader())
                                 {
-                                    var fieldName = reader.GetName(fieldOrdinal);
-                                    fieldList.Add(fieldName);
-                                }
-                                while (reader.Read())
-                                {
-                                    var jObj = new JsonObject();
+                                    if (!reader.HasRows)
+                                        continue;
+                                    writer.WriteLine($"#{clazz.FullName}");
+                                    var fieldCount = reader.FieldCount;
+                                    var fieldList = new List<string>();
                                     for (var fieldOrdinal = 0; fieldOrdinal < fieldCount; fieldOrdinal++)
                                     {
-                                        var fieldName = fieldList[fieldOrdinal];
-                                        var fieldValue = reader.GetValue(fieldOrdinal);
-                                        if (fieldValue == null || fieldValue is DBNull)
-                                            continue;
-                                        jObj.Add(fieldName, JsonValue.Create(fieldValue));
+                                        var fieldName = reader.GetName(fieldOrdinal);
+                                        fieldList.Add(fieldName);
                                     }
-                                    writer.WriteLine(jObj.ToJsonString());
+                                    while (reader.Read())
+                                    {
+                                        var jObj = new JsonObject();
+                                        for (var fieldOrdinal = 0; fieldOrdinal < fieldCount; fieldOrdinal++)
+                                        {
+                                            var fieldName = fieldList[fieldOrdinal];
+                                            var fieldValue = reader.GetValue(fieldOrdinal);
+                                            if (fieldValue == null || fieldValue is DBNull)
+                                                continue;
+                                            jObj.Add(fieldName, JsonValue.Create(fieldValue));
+                                        }
+                                        writer.WriteLine(jObj.ToJsonString());
+                                    }
                                 }
                             }
+                            catch { }
                         }
                     }
                 }
