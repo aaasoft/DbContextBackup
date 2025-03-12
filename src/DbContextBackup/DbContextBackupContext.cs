@@ -108,11 +108,11 @@ public abstract class DbContextBackupContext
         }
     }
 
-    public void Restore(DbContext dbContext, string backupFile)
+    public void Restore(DbContext dbContext, string backupFile, Action<object> modelCheckAction = null)
     {
         using (var stream = File.OpenRead(backupFile))
             Restore(dbContext, stream);
     }
 
-    public abstract void Restore(DbContext dbContext, Stream backupStream);
+    public abstract void Restore(DbContext dbContext, Stream backupStream, Action<object> modelCheckAction = null);
 }

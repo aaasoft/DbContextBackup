@@ -47,7 +47,7 @@ public class XlsxDbContextBackupContext : DbContextBackupContext
         excelProvider.ExportTable(tablesDict, backupStream);
     }
 
-    public override void Restore(DbContext dbContext, Stream backupStream)
+    public override void Restore(DbContext dbContext, Stream backupStream, Action<object> modelCheckAction = null)
     {
         StateNotifyAction?.Invoke(TextResource.RestoringData);
         var entityTypeDict = dbContext.Model.GetEntityTypes().ToDictionary(t => t.GetTableName(), t => t);
@@ -70,7 +70,7 @@ public class XlsxDbContextBackupContext : DbContextBackupContext
             var tableName = tableInfo.Key;
             var table = tableInfo.Value;
             //如果表名不存在
-            if(!entityTypeDict.TryGetValue(tableName,out currentEntityType))
+            if (!entityTypeDict.TryGetValue(tableName, out currentEntityType))
             {
                 position += table.Count;
                 continue;
@@ -88,15 +88,15 @@ public class XlsxDbContextBackupContext : DbContextBackupContext
             {
                 headDict[i] = headRow[i].value;
             }
-            position ++;
+            position++;
 
-            for(var i=1;i<table.Count;i++)
+            for (var i = 1; i < table.Count; i++)
             {
                 position++;
                 updateProgress();
 
                 var dataRow = table[i];
-                var jsonObj =new JsonObject();
+                var jsonObj = new JsonObject();
                 for (var j = 0; j < dataRow.Count; j++)
                 {
                     var columnName = headDict[j];
@@ -137,13 +137,14 @@ public class XlsxDbContextBackupContext : DbContextBackupContext
                 }
                 object item = null;
                 try
-                {                    
+                {
                     item = jsonObj.Deserialize(currentEntityType.ClrType);
                 }
                 catch (Exception ex)
                 {
                     throw new SerializationException($"将数据[{jsonObj}]反序列化为类型[{currentEntityType.ClrType.FullName}]时失败。", ex);
                 }
+                modelCheckAction?.Invoke(item);
                 try
                 {
                     dbContext.Add(item);

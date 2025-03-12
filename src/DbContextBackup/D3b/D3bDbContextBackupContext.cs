@@ -47,7 +47,7 @@ namespace DbContextBackup.D3b
             }
         }
 
-        public override void Restore(DbContext dbContext, Stream backupStream)
+        public override void Restore(DbContext dbContext, Stream backupStream, Action<object> modelCheckAction = null)
         {
             //读取元信息
             using (ZipArchive zipArchive = new ZipArchive(backupStream, ZipArchiveMode.Read, true))
@@ -109,6 +109,7 @@ namespace DbContextBackup.D3b
                             {
                                 throw new SerializationException($"将数据[{line}]反序列化为类型[{currentEntityType.ClrType.FullName}]时失败。", ex);
                             }
+                            modelCheckAction?.Invoke(item);
                             try
                             {
                                 dbContext.Add(item);
