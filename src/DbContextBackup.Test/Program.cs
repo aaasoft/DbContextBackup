@@ -13,7 +13,7 @@ using(var dbContext = new MyDbContext())
 }
 Console.WriteLine("CreatDatabase and fill data done.");
 
-var backupContext = new DbContextBackup.DbContextBackupContext(
+var backupContext = new DbContextBackup.D3b.D3bDbContextBackupContext(
     (process, text) => Console.WriteLine($"[Progress][{process}%] {text}"),
     state => Console.WriteLine($"[State] {state}")
     );
