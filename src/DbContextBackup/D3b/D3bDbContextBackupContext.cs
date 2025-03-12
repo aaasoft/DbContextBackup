@@ -19,7 +19,7 @@ namespace DbContextBackup.D3b
             DbContextBackupContextTextResource textResource = null) : base(progressNotify, stateNotify, textResource)
         { }
 
-        public override void Backup(DbContext dbContext, Stream backupStream, Func<string, string> tableNameProcessor = null)
+        public override void Backup(DbContext dbContext, Stream backupStream, Func<string, string> tableNameProcessor = null, Type[] backupClasses = null)
         {
             using (var zipArchive = new ZipArchive(backupStream, ZipArchiveMode.Create, true))
             {
@@ -27,7 +27,7 @@ namespace DbContextBackup.D3b
                 using (var stream = dataEntry.Open())
                 using (var writer = new StreamWriter(stream, dbBackupDataEncoding))
                 {
-                    innerBackup(dbContext, tableNameProcessor, entityType =>
+                    innerBackup(dbContext, tableNameProcessor, backupClasses, entityType =>
                     {
                         writer.WriteLine($"#{entityType.ClrType.FullName}");
                     }, row =>

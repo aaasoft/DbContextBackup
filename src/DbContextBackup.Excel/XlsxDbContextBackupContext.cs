@@ -16,12 +16,12 @@ public class XlsxDbContextBackupContext : DbContextBackupContext
         DbContextBackupContextTextResource textResource = null) : base(progressNotify, stateNotify, textResource)
     { }
 
-    public override void Backup(DbContext dbContext, Stream backupStream, Func<string, string> tableNameProcessor = null)
+    public override void Backup(DbContext dbContext, Stream backupStream, Func<string, string> tableNameProcessor = null, Type[] backupClasses = null)
     {
         var tablesDict = new Dictionary<string, Quick.Excel.table>();
         Quick.Excel.table currentTable = null;
         IProperty[] currentTableProperties = null;
-        innerBackup(dbContext, tableNameProcessor, entityType =>
+        innerBackup(dbContext, tableNameProcessor, backupClasses, entityType =>
         {
             currentTableProperties = entityType.GetProperties().ToArray();
             currentTable = new Quick.Excel.table();

@@ -32,17 +32,18 @@ public abstract class DbContextBackupContext
         return tableDisplayName;
     }
 
-    public void Backup(DbContext dbContext, string backupFile, Func<string, string> tableNameProcessor = null)
+    public void Backup(DbContext dbContext, string backupFile, Func<string, string> tableNameProcessor = null, Type[] backupClasses = null)
     {
         using (var stream = File.OpenWrite(backupFile))
-            Backup(dbContext, stream, tableNameProcessor);
+            Backup(dbContext, stream, tableNameProcessor, backupClasses);
     }
 
-    public abstract void Backup(DbContext dbContext, Stream backupStream, Func<string, string> tableNameProcessor = null);
+    public abstract void Backup(DbContext dbContext, Stream backupStream, Func<string, string> tableNameProcessor = null, Type[] backupClasses = null);
 
     protected void innerBackup(
         DbContext dbContext,
         Func<string, string> tableNameProcessor,
+        Type[] backupClasses,
         Action<IEntityType> onBackupClassChangedAction,
         Action<Dictionary<string, object>> onBackupOneRowAction)
     {
@@ -52,7 +53,14 @@ public abstract class DbContextBackupContext
         if (connection.State != System.Data.ConnectionState.Open)
             connection.Open();
 
-        var entityTypes = dbContext.Model.GetEntityTypes().ToArray();
+        var backupClassHashSet = backupClasses.ToHashSet();
+        var entityTypes = dbContext.Model.GetEntityTypes()
+            .Where(t =>
+            {
+                if (backupClasses == null)
+                    return true;
+                return backupClassHashSet.Contains(t.ClrType);
+            }).ToArray();
         var i = 1;
         foreach (var entityType in entityTypes)
         {
