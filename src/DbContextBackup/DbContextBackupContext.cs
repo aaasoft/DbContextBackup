@@ -14,58 +14,34 @@ namespace DbContextBackup
         private const string DB_DATA_ENTRY_NAME = "DATA";
         private static readonly Encoding dbBackupDataEncoding = Encoding.UTF8;
 
-        private ZipArchive backupZipArchive;
-        private ZipArchiveEntry backupDataEntry;
-        private Stream backupStream;
-        private StreamWriter backupWriter;
-
-        protected override void OnBackupClassChanged(Type type)
-        {
-            backupWriter.WriteLine($"#{type.FullName}");
-        }
-
-        protected override void BackupRow(Dictionary<string, object> row)
-        {
-            var jObj = new JsonObject();
-            foreach (var item in row)
-            {
-                var fieldName = item.Key;
-                var fieldValue = item.Value;
-                if (fieldValue == null || fieldValue is DBNull)
-                    continue;
-                jObj.Add(fieldName, JsonValue.Create(fieldValue));
-            }
-            backupWriter.WriteLine(jObj.ToJsonString());
-        }
-
         public override void Backup(DbContext dbContext, Stream backupStream, Func<string, string> tableNameProcessor = null)
         {
-            try
+            using (var zipArchive = new ZipArchive(backupStream, ZipArchiveMode.Create, true))
             {
-                backupZipArchive = new ZipArchive(backupStream, ZipArchiveMode.Create, true);
-                backupDataEntry = backupZipArchive.CreateEntry(DB_DATA_ENTRY_NAME);
-                backupStream = backupDataEntry.Open();
-                backupWriter = new StreamWriter(backupStream, dbBackupDataEncoding);
-
-                base.Backup(dbContext, backupStream, tableNameProcessor);
-            }
-            catch
-            {
-                throw;
-            }
-            finally
-            {
-                backupWriter?.Dispose();
-                backupWriter = null;
-                backupStream?.Dispose();
-                backupStream = null;
-                backupDataEntry = null;
-                backupZipArchive?.Dispose();
-                backupZipArchive = null;
+                var dataEntry = zipArchive.CreateEntry(DB_DATA_ENTRY_NAME);
+                using (var stream = dataEntry.Open())
+                using (var writer = new StreamWriter(stream, dbBackupDataEncoding))
+                {
+                    base.Backup(dbContext, backupStream, tableNameProcessor, clazz =>
+                    {
+                        writer.WriteLine($"#{clazz.FullName}");
+                    }, row =>
+                    {
+                        var jObj = new JsonObject();
+                        foreach (var item in row)
+                        {
+                            var fieldName = item.Key;
+                            var fieldValue = item.Value;
+                            if (fieldValue == null || fieldValue is DBNull)
+                                continue;
+                            jObj.Add(fieldName, JsonValue.Create(fieldValue));
+                        }
+                        writer.WriteLine(jObj.ToJsonString());
+                    });
+                }
             }
         }
 
-        
         public override void Restore(DbContext dbContext, Stream backupStream)
         {
             //读取元信息
@@ -73,14 +49,14 @@ namespace DbContextBackup
             {
                 var dataEntry = zipArchive.GetEntry(DB_DATA_ENTRY_NAME);
                 if (dataEntry == null)
-                    throw new ApplicationException(textResource.DatabaseBackupFileHasNoData);
+                    throw new ApplicationException(TextResource.DatabaseBackupFileHasNoData);
 
                 var totalLength = dataEntry.Length;
                 //开始导入
                 using (var stream = dataEntry.Open())
                 using (var reader = new StreamReader(stream, dbBackupDataEncoding))
                 {
-                    stateNotify?.Invoke(textResource.RestoringData);
+                    StateNotifyAction?.Invoke(TextResource.RestoringData);
 
                     Dictionary<string, IEntityType> clazzDict = new Dictionary<string, IEntityType>();
                     foreach (var entityType in dbContext.Model.GetEntityTypes())
@@ -90,10 +66,10 @@ namespace DbContextBackup
                     long position = 0;
                     Action updateProgress = () =>
                     {
-                        progressNotify?.Invoke(
+                        ProgressNotifyAction?.Invoke(
                         Convert.ToInt32(position * 100 / totalLength),
                         currentEntityType == null ?
-                            null : getEntityTypeDisplayName(currentEntityType));
+                            null : GetEntityTypeDisplayName(currentEntityType));
                     };
 
                     while (!reader.EndOfStream)
@@ -138,7 +114,7 @@ namespace DbContextBackup
                             }
                         }
                     }
-                    stateNotify?.Invoke(textResource.SavingChanges);
+                    StateNotifyAction?.Invoke(TextResource.SavingChanges);
                     dbContext.SaveChanges();
                 }
             }

@@ -1,10 +1,5 @@
-using System;
-using System.IO.Compression;
 using System.Reflection;
-using System.Runtime.Serialization;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
@@ -12,24 +7,23 @@ namespace DbContextBackup;
 
 public abstract class AbstractDbContextBackupContext
 {
-    private static readonly Encoding dbBackupDataEncoding = Encoding.UTF8;
-    protected Action<int, string> progressNotify;
-    protected Action<string> stateNotify;
-    protected DbContextBackupContextTextResource textResource;
+    protected Action<int, string> ProgressNotifyAction;
+    protected Action<string> StateNotifyAction;
+    protected DbContextBackupContextTextResource TextResource;
 
     public AbstractDbContextBackupContext(
         Action<int, string> progressNotify = null,
         Action<string> stateNotify = null,
         DbContextBackupContextTextResource textResource = null)
     {
-        this.progressNotify = progressNotify;
-        this.stateNotify = stateNotify;
+        this.ProgressNotifyAction = progressNotify;
+        this.StateNotifyAction = stateNotify;
         if (textResource == null)
             textResource = new DbContextBackupContextTextResource();
-        this.textResource = textResource;
+        this.TextResource = textResource;
     }
 
-    protected string getEntityTypeDisplayName(IEntityType entityType)
+    protected string GetEntityTypeDisplayName(IEntityType entityType)
     {
         var tableDisplayName = entityType.ClrType
             .GetCustomAttribute<CommentAttribute>()?.Comment;
@@ -45,10 +39,14 @@ public abstract class AbstractDbContextBackupContext
             Backup(dbContext, stream, tableNameProcessor);
     }
 
-    protected abstract void OnBackupClassChanged(Type type);
-    protected abstract void BackupRow(Dictionary<string, object> row);
+    public abstract void Backup(DbContext dbContext, Stream backupStream, Func<string, string> tableNameProcessor = null);
 
-    public virtual void Backup(DbContext dbContext, Stream backupStream, Func<string, string> tableNameProcessor = null)
+    protected virtual void Backup(
+        DbContext dbContext,
+        Stream backupStream,
+        Func<string, string> tableNameProcessor,
+        Action<Type> onBackupClassChangedAction,
+        Action<Dictionary<string, object>> onBackupOneRowAction)
     {
         dbContext.Database.EnsureCreated();
 
@@ -60,7 +58,7 @@ public abstract class AbstractDbContextBackupContext
         var i = 1;
         foreach (var entityType in entityTypes)
         {
-            progressNotify?.Invoke(i * 100 / entityTypes.Length, $"({i}/{entityTypes.Length}) {getEntityTypeDisplayName(entityType)})");
+            ProgressNotifyAction?.Invoke(i * 100 / entityTypes.Length, $"({i}/{entityTypes.Length}) {GetEntityTypeDisplayName(entityType)})");
             i++;
             var clazz = entityType.ClrType;
             var tableName = entityType.GetTableName();
@@ -75,7 +73,7 @@ public abstract class AbstractDbContextBackupContext
                     {
                         if (!reader.HasRows)
                             continue;
-                        OnBackupClassChanged(clazz);
+                        onBackupClassChangedAction?.Invoke(clazz);
 
                         var fieldCount = reader.FieldCount;
                         var fieldList = new List<string>();
@@ -96,7 +94,7 @@ public abstract class AbstractDbContextBackupContext
                                     continue;
                                 rowDict[fieldName] = fieldValue;
                             }
-                            BackupRow(rowDict);
+                            onBackupOneRowAction?.Invoke(rowDict);
                         }
                     }
                 }
