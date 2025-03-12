@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbContextBackup", "DbContex
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbContextBackup.Test", "DbContextBackup.Test\DbContextBackup.Test.csproj", "{8323E277-1B77-4CC7-8412-628FBB168E26}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DbContextBackup.Excel", "DbContextBackup.Excel\DbContextBackup.Excel.csproj", "{C99A74E7-F886-4E98-BE4C-1711154EE570}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{8323E277-1B77-4CC7-8412-628FBB168E26}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8323E277-1B77-4CC7-8412-628FBB168E26}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8323E277-1B77-4CC7-8412-628FBB168E26}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C99A74E7-F886-4E98-BE4C-1711154EE570}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C99A74E7-F886-4E98-BE4C-1711154EE570}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C99A74E7-F886-4E98-BE4C-1711154EE570}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C99A74E7-F886-4E98-BE4C-1711154EE570}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -9,112 +9,64 @@ using System.Text.Json.Nodes;
 
 namespace DbContextBackup
 {
-    public class DbContextBackupContext
+    public class DbContextBackupContext : AbstractDbContextBackupContext
     {
         private const string DB_DATA_ENTRY_NAME = "DATA";
         private static readonly Encoding dbBackupDataEncoding = Encoding.UTF8;
-        private Action<int, string> progressNotify;
-        private Action<string> stateNotify;
-        private DbContextBackupContextTextResource textResource;
 
-        public DbContextBackupContext(
-            Action<int, string> progressNotify = null,
-            Action<string> stateNotify = null,
-            DbContextBackupContextTextResource textResource = null)
+        private ZipArchive backupZipArchive;
+        private ZipArchiveEntry backupDataEntry;
+        private Stream backupStream;
+        private StreamWriter backupWriter;
+
+        protected override void OnBackupClassChanged(Type type)
         {
-            this.progressNotify = progressNotify;
-            this.stateNotify = stateNotify;
-            if (textResource == null)
-                textResource = new DbContextBackupContextTextResource();
-            this.textResource = textResource;
+            backupWriter.WriteLine($"#{type.FullName}");
         }
 
-        private string getEntityTypeDisplayName(IEntityType entityType)
+        protected override void BackupRow(Dictionary<string, object> row)
         {
-            var tableDisplayName = entityType.ClrType
-                .GetCustomAttribute<CommentAttribute>()?.Comment;
-            if (string.IsNullOrEmpty(tableDisplayName))
-                tableDisplayName = entityType.DisplayName();
-            tableDisplayName += $"({entityType.GetTableName()})";
-            return tableDisplayName;
-        }
-
-        public void Backup(DbContext dbContext, string backupFile, Func<string, string> tableNameProcessor = null)
-        {
-            using (var stream = File.OpenWrite(backupFile))
-                Backup(dbContext, stream, tableNameProcessor);
-        }
-
-        public void Backup(DbContext dbContext, Stream backupStream, Func<string, string> tableNameProcessor = null)
-        {
-            dbContext.Database.EnsureCreated();
-
-            var connection = dbContext.Database.GetDbConnection();
-            if (connection.State != System.Data.ConnectionState.Open)
-                connection.Open();
-
-            using (var zipArchive = new ZipArchive(backupStream, ZipArchiveMode.Create, true))
+            var jObj = new JsonObject();
+            foreach (var item in row)
             {
-                var dataEntry = zipArchive.CreateEntry(DB_DATA_ENTRY_NAME);
-                using (var stream = dataEntry.Open())
-                using (var writer = new StreamWriter(stream, dbBackupDataEncoding))
-                {
-                    var entityTypes = dbContext.Model.GetEntityTypes().ToArray();
-                    var i = 1;
-                    foreach (var entityType in entityTypes)
-                    {
-                        progressNotify?.Invoke(i * 100 / entityTypes.Length, $"({i}/{entityTypes.Length}) {getEntityTypeDisplayName(entityType)})");
-                        i++;
-                        var clazz = entityType.ClrType;
-                        var tableName = entityType.GetTableName();
-                        if (tableNameProcessor != null)
-                            tableName = tableNameProcessor(tableName);
-                        using (var cmd = connection.CreateCommand())
-                        {
-                            cmd.CommandText = $"select * from {tableName}";
-                            try
-                            {
-                                using (var reader = cmd.ExecuteReader())
-                                {
-                                    if (!reader.HasRows)
-                                        continue;
-                                    writer.WriteLine($"#{clazz.FullName}");
-                                    var fieldCount = reader.FieldCount;
-                                    var fieldList = new List<string>();
-                                    for (var fieldOrdinal = 0; fieldOrdinal < fieldCount; fieldOrdinal++)
-                                    {
-                                        var fieldName = reader.GetName(fieldOrdinal);
-                                        fieldList.Add(fieldName);
-                                    }
-                                    while (reader.Read())
-                                    {
-                                        var jObj = new JsonObject();
-                                        for (var fieldOrdinal = 0; fieldOrdinal < fieldCount; fieldOrdinal++)
-                                        {
-                                            var fieldName = fieldList[fieldOrdinal];
-                                            var fieldValue = reader.GetValue(fieldOrdinal);
-                                            if (fieldValue == null || fieldValue is DBNull)
-                                                continue;
-                                            jObj.Add(fieldName, JsonValue.Create(fieldValue));
-                                        }
-                                        writer.WriteLine(jObj.ToJsonString());
-                                    }
-                                }
-                            }
-                            catch { }
-                        }
-                    }
-                }
+                var fieldName = item.Key;
+                var fieldValue = item.Value;
+                if (fieldValue == null || fieldValue is DBNull)
+                    continue;
+                jObj.Add(fieldName, JsonValue.Create(fieldValue));
+            }
+            backupWriter.WriteLine(jObj.ToJsonString());
+        }
+
+        public override void Backup(DbContext dbContext, Stream backupStream, Func<string, string> tableNameProcessor = null)
+        {
+            try
+            {
+                backupZipArchive = new ZipArchive(backupStream, ZipArchiveMode.Create, true);
+                backupDataEntry = backupZipArchive.CreateEntry(DB_DATA_ENTRY_NAME);
+                backupStream = backupDataEntry.Open();
+                backupWriter = new StreamWriter(backupStream, dbBackupDataEncoding);
+
+                base.Backup(dbContext, backupStream, tableNameProcessor);
+            }
+            catch
+            {
+                throw;
+            }
+            finally
+            {
+                backupWriter?.Dispose();
+                backupWriter = null;
+                backupStream?.Dispose();
+                backupStream = null;
+                backupDataEntry = null;
+                backupZipArchive?.Dispose();
+                backupZipArchive = null;
             }
         }
 
-        public void Restore(DbContext dbContext, string backupFile)
-        {
-            using (var stream = File.OpenRead(backupFile))
-                Restore(dbContext, stream);
-        }
-
-        public void Restore(DbContext dbContext, Stream backupStream)
+        
+        public override void Restore(DbContext dbContext, Stream backupStream)
         {
             //读取元信息
             using (ZipArchive zipArchive = new ZipArchive(backupStream, ZipArchiveMode.Read, true))
@@ -139,9 +91,9 @@ namespace DbContextBackup
                     Action updateProgress = () =>
                     {
                         progressNotify?.Invoke(
-                           Convert.ToInt32(position * 100 / totalLength),
-                           currentEntityType == null ?
-                               null : getEntityTypeDisplayName(currentEntityType));
+                        Convert.ToInt32(position * 100 / totalLength),
+                        currentEntityType == null ?
+                            null : getEntityTypeDisplayName(currentEntityType));
                     };
 
                     while (!reader.EndOfStream)
