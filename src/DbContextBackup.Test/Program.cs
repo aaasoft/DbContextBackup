@@ -28,6 +28,8 @@ Console.WriteLine("Backup done.");
 Console.WriteLine("Restoring...");
 using (var dbContext = new MyDbContext())
 {
+    dbContext.Database.EnsureDeleted();
+    dbContext.Database.EnsureCreated();
     backupContext.Restore(dbContext, backupFile);
 }
 Console.WriteLine("Restore done.");
