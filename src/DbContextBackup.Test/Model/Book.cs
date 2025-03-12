@@ -16,5 +16,7 @@ namespace DbContextBackup.Test.Model
         public string Id { get; set; }
         public string Name { get; set; }
         public string ISBN { get; set; }
+        public int ReadCount { get; set; }
+        public bool? IsRead { get; set; }
     }
 }

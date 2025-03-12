@@ -39,7 +39,7 @@ namespace DbContextBackup.D3b
                             var fieldValue = item.Value;
                             if (fieldValue == null || fieldValue is DBNull)
                                 continue;
-                            jObj.Add(fieldName, JsonValue.Create(fieldValue));
+                            jObj[fieldName] = JsonValue.Create(fieldValue);
                         }
                         writer.WriteLine(jObj.ToJsonString());
                     });
