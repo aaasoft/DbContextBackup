@@ -27,9 +27,9 @@ namespace DbContextBackup.D3b
                 using (var stream = dataEntry.Open())
                 using (var writer = new StreamWriter(stream, dbBackupDataEncoding))
                 {
-                    base.Backup(dbContext, backupStream, tableNameProcessor, clazz =>
+                    innerBackup(dbContext, tableNameProcessor, entityType =>
                     {
-                        writer.WriteLine($"#{clazz.FullName}");
+                        writer.WriteLine($"#{entityType.ClrType.FullName}");
                     }, row =>
                     {
                         var jObj = new JsonObject();

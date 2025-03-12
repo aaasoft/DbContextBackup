@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DbContextBackup.Excel\DbContextBackup.Excel.csproj" />
     <ProjectReference Include="..\DbContextBackup\DbContextBackup.csproj" />
   </ItemGroup>
 

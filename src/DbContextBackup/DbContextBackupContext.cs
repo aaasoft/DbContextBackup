@@ -40,11 +40,10 @@ public abstract class DbContextBackupContext
 
     public abstract void Backup(DbContext dbContext, Stream backupStream, Func<string, string> tableNameProcessor = null);
 
-    protected virtual void Backup(
+    protected void innerBackup(
         DbContext dbContext,
-        Stream backupStream,
         Func<string, string> tableNameProcessor,
-        Action<Type> onBackupClassChangedAction,
+        Action<IEntityType> onBackupClassChangedAction,
         Action<Dictionary<string, object>> onBackupOneRowAction)
     {
         dbContext.Database.EnsureCreated();
@@ -59,7 +58,6 @@ public abstract class DbContextBackupContext
         {
             ProgressNotifyAction?.Invoke(i * 100 / entityTypes.Length, $"({i}/{entityTypes.Length}) {GetEntityTypeDisplayName(entityType)})");
             i++;
-            var clazz = entityType.ClrType;
             var tableName = entityType.GetTableName();
             if (tableNameProcessor != null)
                 tableName = tableNameProcessor(tableName);
@@ -72,7 +70,7 @@ public abstract class DbContextBackupContext
                     {
                         if (!reader.HasRows)
                             continue;
-                        onBackupClassChangedAction?.Invoke(clazz);
+                        onBackupClassChangedAction?.Invoke(entityType);
 
                         var fieldCount = reader.FieldCount;
                         var fieldList = new List<string>();
