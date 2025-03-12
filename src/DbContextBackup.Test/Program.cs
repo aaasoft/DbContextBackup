@@ -17,7 +17,7 @@ Console.WriteLine("CreatDatabase and fill data done.");
 
 var fileExtion = "xlsx";
 //var fileExtion = "d3b";
-var backupContext = new DbContextBackup.Excel.ExcelDbContextBackupContext(
+var backupContext = new DbContextBackup.Excel.XlsxDbContextBackupContext(
     (process, text) => Console.WriteLine($"[Progress][{process}%] {text}"),
     state => Console.WriteLine($"[State] {state}")
     );

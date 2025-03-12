@@ -3,7 +3,20 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Version>8.0.14</Version>
+    <Authors>scbeta</Authors>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/aaasoft/DbContextBackup</RepositoryUrl>
+    <Description>Backup and restore data from database with DbContext.</Description>
+    <PackageProjectUrl>https://github.com/aaasoft/DbContextBackup</PackageProjectUrl>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Quick.Excel" Version="1.0.8" />

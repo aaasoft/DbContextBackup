@@ -3,15 +3,14 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Org.BouncyCastle.Asn1.X509.Qualified;
 
 namespace DbContextBackup.Excel;
 
-public class ExcelDbContextBackupContext : DbContextBackupContext
+public class XlsxDbContextBackupContext : DbContextBackupContext
 {
     private Quick.Excel.XSSFExcelProvider excelProvider = new Quick.Excel.XSSFExcelProvider();
 
-    public ExcelDbContextBackupContext(
+    public XlsxDbContextBackupContext(
         Action<int, string> progressNotify = null,
         Action<string> stateNotify = null,
         DbContextBackupContextTextResource textResource = null) : base(progressNotify, stateNotify, textResource)
