@@ -47,7 +47,8 @@ namespace DbContextBackup.D3b
             }
         }
 
-        public override void Restore(DbContext dbContext, Stream backupStream, Action<object> modelCheckAction = null)
+
+        public override void Check(DbContext dbContext, Stream backupStream, Action<object> modelCheckAction = null)
         {
             //读取元信息
             using (ZipArchive zipArchive = new ZipArchive(backupStream, ZipArchiveMode.Read, true))
@@ -61,8 +62,6 @@ namespace DbContextBackup.D3b
                 using (var stream = dataEntry.Open())
                 using (var reader = new StreamReader(stream, dbBackupDataEncoding))
                 {
-                    StateNotifyAction?.Invoke(TextResource.RestoringData);
-
                     Dictionary<string, IEntityType> clazzDict = new Dictionary<string, IEntityType>();
                     foreach (var entityType in dbContext.Model.GetEntityTypes())
                         clazzDict[entityType.ClrType.FullName] = entityType;
@@ -120,8 +119,6 @@ namespace DbContextBackup.D3b
                             }
                         }
                     }
-                    StateNotifyAction?.Invoke(TextResource.SavingChanges);
-                    dbContext.SaveChanges();
                 }
             }
         }

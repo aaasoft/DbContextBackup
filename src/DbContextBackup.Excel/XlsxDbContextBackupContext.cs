@@ -47,9 +47,8 @@ public class XlsxDbContextBackupContext : DbContextBackupContext
         excelProvider.ExportTable(tablesDict, backupStream);
     }
 
-    public override void Restore(DbContext dbContext, Stream backupStream, Action<object> modelCheckAction = null)
+    public override void Check(DbContext dbContext, Stream backupStream, Action<object> modelCheckAction = null)
     {
-        StateNotifyAction?.Invoke(TextResource.RestoringData);
         var entityTypeDict = dbContext.Model.GetEntityTypes().ToDictionary(t => t.GetTableName(), t => t);
         var tableDict = excelProvider.ImportTable(backupStream);
         var totalLength = tableDict.Sum(t => t.Value.Count);
@@ -145,17 +144,7 @@ public class XlsxDbContextBackupContext : DbContextBackupContext
                     throw new SerializationException($"将数据[{jsonObj}]反序列化为类型[{currentEntityType.ClrType.FullName}]时失败。", ex);
                 }
                 modelCheckAction?.Invoke(item);
-                try
-                {
-                    dbContext.Add(item);
-                }
-                catch (Exception ex)
-                {
-                    throw new SerializationException($"将类型[{currentEntityType.ClrType.FullName}]的数据[{jsonObj}]写入数据库时失败。", ex);
-                }
             }
         }
-        StateNotifyAction?.Invoke(TextResource.SavingChanges);
-        dbContext.SaveChanges();
     }
 }

@@ -1,4 +1,6 @@
+using System.Data.Common;
 using System.Reflection;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
@@ -108,11 +110,40 @@ public abstract class DbContextBackupContext
         }
     }
 
+    public abstract void Check(DbContext dbContext, Stream backupStream, Action<object> modelCheckAction = null);
+
+    public void Check(DbContext dbContext, string backupFile, Action<object> modelCheckAction = null)
+    {
+        using (var stream = File.OpenRead(backupFile))
+            Check(dbContext, stream, modelCheckAction);
+    }
+
+    public virtual void Restore(DbContext dbContext, Stream backupStream, Action<object> modelCheckAction = null)
+    {
+        StateNotifyAction?.Invoke(TextResource.RestoringData);
+        Check(dbContext, backupStream, model =>
+        {
+            modelCheckAction?.Invoke(model);
+            try
+            {
+                dbContext.Add(model);
+            }
+            catch (Exception ex)
+            {
+                var typeName = model.GetType().FullName;
+                var dataJson = JsonSerializer.Serialize(model, new JsonSerializerOptions() { WriteIndented = true });
+                throw new DbUpdateException($"将类型[{typeName}]的数据[{dataJson}]写入数据库时失败。", ex);
+            }
+            dbContext.Add(model);
+        });
+        StateNotifyAction?.Invoke(TextResource.SavingChanges);
+        dbContext.SaveChanges();
+    }
+
     public void Restore(DbContext dbContext, string backupFile, Action<object> modelCheckAction = null)
     {
         using (var stream = File.OpenRead(backupFile))
             Restore(dbContext, stream, modelCheckAction);
     }
 
-    public abstract void Restore(DbContext dbContext, Stream backupStream, Action<object> modelCheckAction = null);
 }
