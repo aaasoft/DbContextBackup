@@ -68,6 +68,7 @@ public abstract class DbContextBackupContext
         var i = 1;
         foreach (var entityType in entityTypes)
         {
+            onBackupClassChangedAction?.Invoke(entityType);
             ProgressNotifyAction?.Invoke(i * 100 / entityTypes.Length, $"({i}/{entityTypes.Length}) {GetEntityTypeDisplayName(entityType)})");
             i++;
             var tableName = entityType.GetTableName();
@@ -82,8 +83,6 @@ public abstract class DbContextBackupContext
                     {
                         if (!reader.HasRows)
                             continue;
-                        onBackupClassChangedAction?.Invoke(entityType);
-
                         var fieldCount = reader.FieldCount;
                         var fieldList = new List<string>();
                         for (var fieldOrdinal = 0; fieldOrdinal < fieldCount; fieldOrdinal++)
