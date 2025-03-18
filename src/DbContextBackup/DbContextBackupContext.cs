@@ -55,11 +55,13 @@ public abstract class DbContextBackupContext
         if (connection.State != System.Data.ConnectionState.Open)
             connection.Open();
 
-        var backupClassHashSet = backupClasses.ToHashSet();
+        HashSet<Type> backupClassHashSet = null;
+        if (backupClasses != null)
+            backupClassHashSet = backupClasses.ToHashSet();
         var entityTypes = dbContext.Model.GetEntityTypes()
             .Where(t =>
             {
-                if (backupClasses == null)
+                if (backupClassHashSet == null)
                     return true;
                 return backupClassHashSet.Contains(t.ClrType);
             }).ToArray();
