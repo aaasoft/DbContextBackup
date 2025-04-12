@@ -100,6 +100,8 @@ public abstract class DbContextBackupContext
                                 var fieldValue = reader.GetValue(fieldOrdinal);
                                 if (fieldValue == null || fieldValue is DBNull)
                                     continue;
+                                if (fieldValue is bool b)
+                                    fieldValue = Convert.ToInt32(b);
                                 rowDict[fieldName] = fieldValue;
                             }
                             onBackupOneRowAction?.Invoke(rowDict);
