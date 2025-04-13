@@ -1,4 +1,5 @@
 # DbContextBackup
+# Warning: The reop has removed to https://cnb.cool/scbeta/DbContextBackup
 Backup and restore data from database with DbContext.
 
 Prepare:
